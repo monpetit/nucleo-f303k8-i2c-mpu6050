@@ -21,5 +21,9 @@ typedef int32_t         s32;
 #endif
 #endif /* MPU6050_I2C_ADDRESS */
 
+
+#define USE_I2C_DMA         1
+#define I2C_COMM_TIMEOUT    (20)                         // 20ms
+
 #endif /* __ERGO_CONFIG_H */
 

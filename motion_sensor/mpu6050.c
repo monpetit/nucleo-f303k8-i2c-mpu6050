@@ -20,8 +20,6 @@
 
 /*lint ++flb "Enter library region" */
 
-#define USE_I2C_DMA             1
-
 #define ADDRESS_WHO_AM_I          (0x75U) // !< WHO_AM_I register identifies the device. Expected value is 0x68.
 #define ADDRESS_SIGNAL_PATH_RESET (0x68U) // !<
 
@@ -81,13 +79,16 @@ bool mpu6050_register_write(uint8_t register_address, uint8_t value)
     ret_code_t ret;
 
 #if USE_I2C_DMA
+    u32 start_tick = HAL_GetTick();
     i2c1_transmit_complete = false;
     ret = HAL_I2C_Mem_Write_DMA(&hi2c1, m_device_address, register_address, I2C_MEMADD_SIZE_8BIT, &value, 1);
     while (!i2c1_transmit_complete) {
+        if ((HAL_GetTick() - start_tick) > I2C_COMM_TIMEOUT)
+            break;
         __WFE();
     }
 #else
-    ret = HAL_I2C_Mem_Write(&hi2c1, m_device_address, register_address, I2C_MEMADD_SIZE_8BIT, &value, 1, 100);
+    ret = HAL_I2C_Mem_Write(&hi2c1, m_device_address, register_address, I2C_MEMADD_SIZE_8BIT, &value, 1, I2C_COMM_TIMEOUT);
 #endif
 
     return (ret == HAL_OK);
@@ -100,13 +101,16 @@ bool mpu6050_register_read(uint8_t register_address, uint8_t * destination, uint
     ret_code_t ret;
 
 #if USE_I2C_DMA
+    u32 start_tick = HAL_GetTick();
     i2c1_receive_complete = false;
     ret = HAL_I2C_Mem_Read_DMA(&hi2c1, m_device_address, register_address, I2C_MEMADD_SIZE_8BIT, destination, number_of_bytes);
     while (!i2c1_receive_complete) {
+        if ((HAL_GetTick() - start_tick) > I2C_COMM_TIMEOUT)
+            break;
         __WFE();
     }
 #else
-    ret = HAL_I2C_Mem_Read(&hi2c1, m_device_address, register_address, I2C_MEMADD_SIZE_8BIT, destination, number_of_bytes, 100);
+    ret = HAL_I2C_Mem_Read(&hi2c1, m_device_address, register_address, I2C_MEMADD_SIZE_8BIT, destination, number_of_bytes, I2C_COMM_TIMEOUT);
 #endif
 
     return (ret == HAL_OK);
